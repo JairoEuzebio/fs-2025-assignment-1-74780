@@ -1,0 +1,6 @@
+@fs_2025_assignment_1_74780_HostAddress = http://localhost:5083
+
+GET {{fs_2025_assignment_1_74780_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
