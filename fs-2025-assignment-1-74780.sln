@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36511.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fs-2025-assignment-1-74780", "fs-2025-assignment-1-74780\fs-2025-assignment-1-74780.csproj", "{F8DCA8EF-BFCB-D86A-88F2-8B64F70D7A60}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fs_2025_assignment_1_74780.Tests", "fs_2025_assignment_1_74780.Tests\fs_2025_assignment_1_74780.Tests.csproj", "{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{F8DCA8EF-BFCB-D86A-88F2-8B64F70D7A60}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8DCA8EF-BFCB-D86A-88F2-8B64F70D7A60}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8DCA8EF-BFCB-D86A-88F2-8B64F70D7A60}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
