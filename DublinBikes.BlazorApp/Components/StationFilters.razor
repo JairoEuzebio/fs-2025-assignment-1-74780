@@ -1,0 +1,66 @@
+﻿@using DublinBikes.BlazorApp.Models
+
+<div class="card p-3 mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-4">
+            <label class="form-label" for="searchBox">Search</label>
+            <input id="searchBox"
+                   class="form-control"
+                   placeholder="Name or address..."
+                   @bind="State.Search"
+                   @bind:event="oninput" />
+        </div>
+
+        <div class="col-12 col-md-2">
+            <label class="form-label" for="statusSelect">Status</label>
+            <select id="statusSelect" class="form-select" @bind="State.Status">
+                <option value="All">All</option>
+                <option value="OPEN">OPEN</option>
+                <option value="CLOSED">CLOSED</option>
+            </select>
+        </div>
+
+        <div class="col-12 col-md-2">
+            <label class="form-label" for="minBikes">Min bikes</label>
+            <input id="minBikes"
+                   class="form-control"
+                   type="number"
+                   min="0"
+                   @bind="State.MinBikes" />
+        </div>
+
+        <div class="col-12 col-md-2">
+            <label class="form-label" for="sortSelect">Sort by</label>
+            <select id="sortSelect" class="form-select" @bind="State.Sort">
+                <option value="name">name</option>
+                <option value="availableBikes">availableBikes</option>
+                <option value="occupancy">occupancy</option>
+            </select>
+        </div>
+
+        <div class="col-12 col-md-2">
+            <div class="form-check">
+                <input id="descCheck" class="form-check-input" type="checkbox" @bind="State.SortDesc" />
+                <label class="form-check-label" for="descCheck">Desc</label>
+            </div>
+        </div>
+
+        <div class="col-12 d-flex flex-wrap gap-2 mt-2">
+            <button class="btn btn-primary" type="button" @onclick="Apply">Apply</button>
+            <button class="btn btn-outline-secondary" type="button" @onclick="Reset">Reset</button>
+            <button class="btn btn-success ms-auto" type="button" @onclick="New">New station</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public QueryState State { get; set; } = new();
+
+    [Parameter] public EventCallback OnApply { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public EventCallback OnNew { get; set; }
+
+    private Task Apply() => OnApply.InvokeAsync();
+    private Task Reset() => OnReset.InvokeAsync();
+    private Task New() => OnNew.InvokeAsync();
+}

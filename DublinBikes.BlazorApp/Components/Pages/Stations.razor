@@ -1,0 +1,329 @@
+﻿@page "/stations"
+@using DublinBikes.BlazorApp.Models
+@using DublinBikes.BlazorApp.Services
+@using Microsoft.AspNetCore.WebUtilities
+@using System.Globalization
+@inject StationsApiClient Api
+@inject NavigationManager Nav
+
+<h1>Stations</h1>
+
+<StationFilters State="State"
+                OnApply="ApplyFilters"
+                OnReset="ResetFilters"
+                OnNew="NewStation" />
+
+@if (!string.IsNullOrWhiteSpace(Error))
+{
+    <div class="alert alert-danger" role="alert">@Error</div>
+}
+
+<div class="row g-3">
+    <div class="col-12 col-lg-7">
+        @if (IsLoading)
+        {
+            <div class="alert alert-info" role="status" aria-live="polite">Loading...</div>
+        }
+        else if (StationList.Count == 0)
+        {
+            <div class="alert alert-warning" role="status" aria-live="polite">
+                No stations found.
+            </div>
+        }
+        else
+        {
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Status</th>
+                        <th>Bikes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in StationList)
+                    {
+                        <tr style="cursor:pointer"
+                            class="@(Selected?.Number == s.Number ? "table-primary" : "")"
+                            @onclick="() => Select(s.Number)"
+                            tabindex="0"
+                            role="button">
+                            <td>@s.Name</td>
+                            <td>@s.Address</td>
+                            <td>@s.Status</td>
+                            <td>@s.AvailableBikes / @s.BikeStands</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mt-2 gap-2">
+            <div class="text-muted">
+                Page @State.Page
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <label class="form-label mb-0" for="pageSize">Page size</label>
+                <select id="pageSize"
+                        class="form-select"
+                        style="width:140px"
+                        @bind="State.PageSize"
+                        @bind:after="OnPageSizeChanged">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                </select>
+
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary"
+                            @onclick="PrevPage"
+                            disabled="@(!CanPrev || IsLoading)">
+                        Prev
+                    </button>
+                    <button class="btn btn-outline-secondary"
+                            @onclick="NextPage"
+                            disabled="@(!CanNext || IsLoading)">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-5">
+        <StationDetail Station="Selected"
+                       @bind-Mode="Mode"
+                       OnCreate="CreateStation"
+                       OnUpdate="UpdateStation"
+                       OnDelete="DeleteStation"
+                       OnCancel="CancelEdit" />
+    </div>
+</div>
+
+@code {
+    private QueryState State { get; set; } = new();
+    private List<StationDto> StationList { get; set; } = new();
+    private StationDto? Selected { get; set; }
+
+    private bool IsLoading;
+    private string Error = "";
+
+    private StationDetailMode Mode = StationDetailMode.View;
+
+    private bool CanPrev => State.Page > 1;
+    private bool CanNext => StationList.Count >= State.PageSize;
+
+    protected override async Task OnInitializedAsync()
+    {
+        HydrateStateFromUrl();
+        await Load();
+    }
+
+    private void HydrateStateFromUrl()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        string Get(string key, string fallback)
+            => query.TryGetValue(key, out var v) ? v.ToString() : fallback;
+
+        int? GetInt(string key)
+            => query.TryGetValue(key, out var v) && int.TryParse(v, out var n) ? n : null;
+
+        State.Search = Get("search", "");
+        State.Status = Get("status", "All");
+        State.MinBikes = GetInt("minBikes");
+
+        State.Sort = Get("sort", "name");
+        State.Dir = Get("dir", "asc");
+
+        State.Page = Math.Max(1, GetInt("page") ?? 1);
+        State.PageSize = Math.Clamp(GetInt("pageSize") ?? 20, 1, 200);
+
+        var selected = GetInt("selected");
+        if (selected is not null)
+        {
+            _ = TrySelectFromUrl(selected.Value);
+        }
+    }
+
+    private void PushStateToUrl()
+    {
+        var qs = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(State.Search))
+            qs.Add($"search={Uri.EscapeDataString(State.Search)}");
+
+        if (!string.IsNullOrWhiteSpace(State.Status) && State.Status != "All")
+            qs.Add($"status={State.Status}");
+
+        if (State.MinBikes is not null)
+            qs.Add($"minBikes={State.MinBikes}");
+
+        qs.Add($"sort={State.Sort}");
+        qs.Add($"dir={State.Dir}");
+        qs.Add($"page={State.Page}");
+        qs.Add($"pageSize={State.PageSize}");
+
+        if (Selected is not null)
+            qs.Add($"selected={Selected.Number}");
+
+        Nav.NavigateTo("/stations?" + string.Join("&", qs), replace: true);
+    }
+
+    private async Task Load()
+    {
+        Error = "";
+        IsLoading = true;
+
+        try
+        {
+            StationList = (await Api.GetStationsAsync(State)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+            StationList.Clear();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        State.Page = 1;
+        Selected = null;
+        Mode = StationDetailMode.View;
+        PushStateToUrl();
+        await Load();
+    }
+
+    private async Task ResetFilters()
+    {
+        State = new QueryState();
+        Selected = null;
+        Mode = StationDetailMode.View;
+        PushStateToUrl();
+        await Load();
+    }
+
+    private void NewStation()
+    {
+        Selected = new StationDto
+        {
+            Status = "OPEN",
+            Position = new GeoPositionDto()
+        };
+        Mode = StationDetailMode.Create;
+        PushStateToUrl();
+    }
+
+    private async Task Select(int number)
+    {
+        try
+        {
+            Selected = await Api.GetByNumberAsync(number);
+            Mode = StationDetailMode.View;
+            PushStateToUrl();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    private async Task TrySelectFromUrl(int number)
+    {
+        try
+        {
+            Selected = await Api.GetByNumberAsync(number);
+        }
+        catch { }
+    }
+
+    private async Task CreateStation(StationDto dto)
+    {
+        try
+        {
+            Selected = await Api.CreateAsync(dto);
+            Mode = StationDetailMode.View;
+            PushStateToUrl();
+            await Load();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    private async Task UpdateStation(StationDto dto)
+    {
+        try
+        {
+            Selected = await Api.UpdateAsync(dto.Number, dto);
+            Mode = StationDetailMode.View;
+            PushStateToUrl();
+            await Load();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    private async Task DeleteStation(int number)
+    {
+        try
+        {
+            await Api.DeleteAsync(number);
+            Selected = null;
+            Mode = StationDetailMode.View;
+            PushStateToUrl();
+            await Load();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        Mode = StationDetailMode.View;
+        PushStateToUrl();
+    }
+
+    private async Task PrevPage()
+    {
+        if (!CanPrev) return;
+        State.Page--;
+        PushStateToUrl();
+        await Load();
+    }
+
+    private async Task NextPage()
+    {
+        if (!CanNext) return;
+        State.Page++;
+        PushStateToUrl();
+        await Load();
+    }
+
+    private async Task OnPageSizeChanged()
+    {
+        State.Page = 1;
+        PushStateToUrl();
+        await Load();
+    }
+
+    public enum StationDetailMode
+    {
+        View,
+        Create,
+        Edit
+    }
+}

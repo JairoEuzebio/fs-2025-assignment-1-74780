@@ -1,0 +1,267 @@
+﻿@using DublinBikes.BlazorApp.Models
+
+@if (Station is null)
+{
+    <div class="card p-3 text-muted">Select a station</div>
+}
+else
+{
+    <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h3 class="mb-1">@Station.Name</h3>
+                <div class="text-muted">@Station.Address</div>
+            </div>
+            <span class="badge @(BadgeClass)" aria-label="Station status">@Station.Status</span>
+        </div>
+
+        <hr />
+
+        @if (!string.IsNullOrWhiteSpace(Error))
+        {
+            <div class="alert alert-danger" role="alert">@Error</div>
+        }
+
+        @if (Mode == DublinBikes.BlazorApp.Components.Pages.Stations.StationDetailMode.Create)
+        {
+            <h5>Create station</h5>
+            <StationForm Model="EditModel" ReadonlyNumber="false" />
+            <div class="mt-3">
+                <button class="btn btn-primary me-2" type="button" @onclick="Create" disabled="@Busy">Create</button>
+                <button class="btn btn-secondary" type="button" @onclick="Cancel" disabled="@Busy">Cancel</button>
+            </div>
+        }
+        else if (Mode == DublinBikes.BlazorApp.Components.Pages.Stations.StationDetailMode.Edit)
+        {
+            <h5>Edit station</h5>
+            <StationForm Model="EditModel" ReadonlyNumber="true" />
+            <div class="mt-3 d-flex justify-content-between">
+                <div>
+                    <button class="btn btn-primary me-2" type="button" @onclick="Save" disabled="@Busy">Save</button>
+                    <button class="btn btn-secondary" type="button" @onclick="Cancel" disabled="@Busy">Cancel</button>
+                </div>
+                <button class="btn btn-danger" type="button" @onclick="Delete" disabled="@Busy">Delete</button>
+            </div>
+        }
+        else
+        {
+            <dl class="row mt-2">
+                <dt class="col-6">Total stands</dt>
+                <dd class="col-6 text-end">@Station.BikeStands</dd>
+
+                <dt class="col-6">Available bikes</dt>
+                <dd class="col-6 text-end">@Station.AvailableBikes</dd>
+
+                <dt class="col-6">Available stands</dt>
+                <dd class="col-6 text-end">@Station.AvailableBikeStands</dd>
+
+                <dt class="col-6">Last update (Dublin)</dt>
+                <dd class="col-6 text-end">@LastUpdateDublinText</dd>
+
+                <dt class="col-6">Coordinates</dt>
+                <dd class="col-6 text-end">
+                    @($"{Lat:F5}, {Lng:F5}")
+                    @if (HasCoords)
+                    {
+                        <a class="ms-2" href="@MapUrl" target="_blank" rel="noopener noreferrer">Map</a>
+                    }
+                </dd>
+            </dl>
+
+            <div class="mt-3">
+                <div class="d-flex justify-content-between">
+                    <div class="fw-semibold">Occupancy</div>
+                    <div class="text-muted">@($"{OccupancyPercent:F0}%")</div>
+                </div>
+
+                <div class="progress" role="progressbar" aria-valuenow="@OccupancyPercent" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress-bar" style="width:@($"{OccupancyPercent:F0}%")">
+                        <span class="visually-hidden">@($"{OccupancyPercent:F0}% occupancy")</span>
+                    </div>
+                </div>
+
+                <div class="text-muted mt-1">
+                    @($"{Station.AvailableBikes} bikes out of {Station.BikeStands} stands")
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-primary" type="button" @onclick="BeginEdit">Edit</button>
+                <button class="btn btn-success" type="button" @onclick="BeginCreate">New station</button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public StationDto? Station { get; set; }
+
+    [Parameter]
+    public DublinBikes.BlazorApp.Components.Pages.Stations.StationDetailMode Mode { get; set; }
+
+    [Parameter]
+    public EventCallback<DublinBikes.BlazorApp.Components.Pages.Stations.StationDetailMode> ModeChanged { get; set; }
+
+    [Parameter] public EventCallback<StationDto> OnCreate { get; set; }
+    [Parameter] public EventCallback<StationDto> OnUpdate { get; set; }
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private StationDto EditModel { get; set; } = new();
+
+    private bool Busy { get; set; }
+    private string? Error { get; set; }
+
+    private string BadgeClass
+        => (Station?.Status ?? "").Equals("OPEN", StringComparison.OrdinalIgnoreCase) ? "bg-success"
+         : (Station?.Status ?? "").Equals("CLOSED", StringComparison.OrdinalIgnoreCase) ? "bg-secondary"
+         : "bg-dark";
+
+    private double OccupancyPercent
+    {
+        get
+        {
+            if (Station is null) return 0;
+            if (Station.BikeStands <= 0) return 0;
+            var p = (double)Station.AvailableBikes / Station.BikeStands * 100.0;
+            return Math.Clamp(p, 0, 100);
+        }
+    }
+
+    private double Lat => Station?.Position?.Lat ?? 0;
+    private double Lng => Station?.Position?.Lng ?? 0;
+    private bool HasCoords => Station?.Position is not null && (Lat != 0 || Lng != 0);
+
+    private string MapUrl => $"https://www.google.com/maps?q={Lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{Lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
+    private string LastUpdateDublinText
+    {
+        get
+        {
+            if (Station is null) return "-";
+            try
+            {
+                var utc = DateTimeOffset.FromUnixTimeMilliseconds(Station.LastUpdateEpochMs);
+                var tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Dublin");
+                var local = TimeZoneInfo.ConvertTime(utc, tz);
+                return local.ToString("dd MMM yyyy HH:mm");
+            }
+            catch
+            {
+                return "-";
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        Error = null;
+
+        if (Station is null) return;
+
+        EditModel = new StationDto
+        {
+            Id = Station.Id,
+            Number = Station.Number,
+            ContractName = Station.ContractName,
+            Name = Station.Name,
+            Address = Station.Address,
+            Status = Station.Status,
+            BikeStands = Station.BikeStands,
+            AvailableBikes = Station.AvailableBikes,
+            AvailableBikeStands = Station.AvailableBikeStands,
+            LastUpdateEpochMs = Station.LastUpdateEpochMs,
+            Position = new GeoPositionDto
+            {
+                Lat = Station.Position?.Lat ?? 0,
+                Lng = Station.Position?.Lng ?? 0
+            }
+        };
+    }
+
+    private async Task BeginCreate()
+    {
+        Error = null;
+
+        EditModel = new StationDto
+        {
+            Status = "OPEN",
+            Position = new GeoPositionDto()
+        };
+
+        await ModeChanged.InvokeAsync(DublinBikes.BlazorApp.Components.Pages.Stations.StationDetailMode.Create);
+    }
+
+    private async Task BeginEdit()
+    {
+        Error = null;
+        await ModeChanged.InvokeAsync(DublinBikes.BlazorApp.Components.Pages.Stations.StationDetailMode.Edit);
+    }
+
+    private async Task Create()
+    {
+        Error = null;
+        Busy = true;
+
+        try
+        {
+            await OnCreate.InvokeAsync(EditModel);
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        Error = null;
+        Busy = true;
+
+        try
+        {
+            await OnUpdate.InvokeAsync(EditModel);
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    private async Task Delete()
+    {
+        Error = null;
+
+        if (Station is null) return;
+
+        Busy = true;
+
+        try
+        {
+            await OnDelete.InvokeAsync(Station.Number);
+        }
+        catch (Exception ex)
+        {
+            Error = ex.Message;
+        }
+        finally
+        {
+            Busy = false;
+        }
+    }
+
+    private async Task Cancel()
+    {
+        Error = null;
+        await ModeChanged.InvokeAsync(DublinBikes.BlazorApp.Components.Pages.Stations.StationDetailMode.View);
+        await OnCancel.InvokeAsync();
+    }
+}

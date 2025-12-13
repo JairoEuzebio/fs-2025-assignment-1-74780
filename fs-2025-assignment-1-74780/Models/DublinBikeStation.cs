@@ -1,62 +1,64 @@
-﻿using System.Text.Json.Serialization;
+﻿using Newtonsoft.Json;
 
 namespace fs_2025_assignment_1_74780.Models;
 
 public class GeoPosition
 {
-    [JsonPropertyName("lat")]
+    [JsonProperty("lat")]
     public double Lat { get; set; }
 
-    [JsonPropertyName("lng")]
+    [JsonProperty("lng")]
     public double Lng { get; set; }
 }
 
 public class DublinBikeStation
 {
-    [JsonPropertyName("number")]
+    [JsonProperty("id")]
+    public string Id { get; set; } = "";
+
+    [JsonProperty("number")]
     public int Number { get; set; }
 
-    [JsonPropertyName("contract_name")]
+    [JsonProperty("contract_name")]
     public string ContractName { get; set; } = "";
 
-    [JsonPropertyName("name")]
+    [JsonProperty("name")]
     public string Name { get; set; } = "";
 
-    [JsonPropertyName("address")]
+    [JsonProperty("address")]
     public string Address { get; set; } = "";
 
-    [JsonPropertyName("position")]
-    public GeoPosition Position { get; set; } = new GeoPosition();
+    [JsonProperty("position")]
+    public GeoPosition Position { get; set; } = new();
 
-    [JsonPropertyName("banking")]
+    [JsonProperty("banking")]
     public bool Banking { get; set; }
 
-    [JsonPropertyName("bonus")]
+    [JsonProperty("bonus")]
     public bool Bonus { get; set; }
 
-    [JsonPropertyName("bike_stands")]
+    [JsonProperty("bike_stands")]
     public int BikeStands { get; set; }
 
-    [JsonPropertyName("available_bike_stands")]
+    [JsonProperty("available_bike_stands")]
     public int AvailableBikeStands { get; set; }
 
-    [JsonPropertyName("available_bikes")]
+    [JsonProperty("available_bikes")]
     public int AvailableBikes { get; set; }
 
-    [JsonPropertyName("status")]
+    [JsonProperty("status")]
     public string Status { get; set; } = "";
 
-    [JsonPropertyName("last_update")]
+    [JsonProperty("last_update")]
     public long LastUpdateEpochMs { get; set; }
 
- 
+    [JsonIgnore]
+    public double Occupancy => BikeStands == 0 ? 0 : (double)AvailableBikes / BikeStands;
 
-    public double Occupancy =>
-        BikeStands == 0 ? 0 : (double)AvailableBikes / BikeStands;
+    [JsonIgnore]
+    public DateTimeOffset LastUpdateUtc => DateTimeOffset.FromUnixTimeMilliseconds(LastUpdateEpochMs);
 
-    public DateTimeOffset LastUpdateUtc =>
-        DateTimeOffset.FromUnixTimeMilliseconds(LastUpdateEpochMs);
-
+    [JsonIgnore]
     public DateTimeOffset LastUpdateDublin
     {
         get

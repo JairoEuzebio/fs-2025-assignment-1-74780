@@ -1,0 +1,57 @@
+﻿@using DublinBikes.BlazorApp.Models
+
+<EditForm Model="Model">
+    <div class="mb-2">
+        <label class="form-label">Number</label>
+        <InputNumber class="form-control" @bind-Value="Model.Number" disabled="@(ReadonlyNumber)" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Name</label>
+        <InputText class="form-control" @bind-Value="Model.Name" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Address</label>
+        <InputText class="form-control" @bind-Value="Model.Address" />
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label">Status</label>
+        <InputSelect class="form-select" @bind-Value="Model.Status">
+            <option value="OPEN">OPEN</option>
+            <option value="CLOSED">CLOSED</option>
+        </InputSelect>
+    </div>
+
+    <div class="row g-2">
+        <div class="col-4">
+            <label class="form-label">Bike stands</label>
+            <InputNumber class="form-control" @bind-Value="Model.BikeStands" />
+        </div>
+        <div class="col-4">
+            <label class="form-label">Available bikes</label>
+            <InputNumber class="form-control" @bind-Value="Model.AvailableBikes" />
+        </div>
+        <div class="col-4">
+            <label class="form-label">Available stands</label>
+            <InputNumber class="form-control" @bind-Value="Model.AvailableBikeStands" />
+        </div>
+    </div>
+
+    <div class="row g-2 mt-1">
+        <div class="col-6">
+            <label class="form-label">Latitude</label>
+            <InputNumber class="form-control" @bind-Value="Model.Latitude" />
+        </div>
+        <div class="col-6">
+            <label class="form-label">Longitude</label>
+            <InputNumber class="form-control" @bind-Value="Model.Longitude" />
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public StationDto Model { get; set; } = default!;
+    [Parameter] public bool ReadonlyNumber { get; set; }
+}

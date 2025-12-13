@@ -7,6 +7,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fs-2025-assignment-1-74780"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "fs_2025_assignment_1_74780.Tests", "fs_2025_assignment_1_74780.Tests\fs_2025_assignment_1_74780.Tests.csproj", "{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DublinBikes.BlazorApp", "DublinBikes.BlazorApp\DublinBikes.BlazorApp.csproj", "{DF69B1BF-9810-47C6-9508-0AEA075778FF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +28,10 @@ Global
 		{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D83B8043-9D69-4B00-A7AE-5778F87B9CB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF69B1BF-9810-47C6-9508-0AEA075778FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF69B1BF-9810-47C6-9508-0AEA075778FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF69B1BF-9810-47C6-9508-0AEA075778FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF69B1BF-9810-47C6-9508-0AEA075778FF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

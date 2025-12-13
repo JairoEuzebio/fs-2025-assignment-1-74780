@@ -1,0 +1,31 @@
+﻿@using DublinBikes.BlazorApp.Models
+@using Microsoft.AspNetCore.Components
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Status</th>
+            <th>Bikes</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Items)
+        {
+            var selectedClass = SelectedStation is not null && SelectedStation.Number == s.Number ? "table-primary" : string.Empty;
+            <tr class="@selectedClass" style="cursor:pointer" @onclick="@(() => OnSelect.InvokeAsync(s))">
+                <td>@s.Name</td>
+                <td>@s.Address</td>
+                <td>@s.Status</td>
+                <td>@s.AvailableBikes / @s.BikeStands</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IReadOnlyList<StationDto> Items { get; set; } = Array.Empty<StationDto>();
+    [Parameter] public StationDto? SelectedStation { get; set; }
+    [Parameter] public EventCallback<StationDto> OnSelect { get; set; }
+}

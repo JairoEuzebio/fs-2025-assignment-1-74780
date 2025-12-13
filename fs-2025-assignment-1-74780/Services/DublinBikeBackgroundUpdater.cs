@@ -1,14 +1,13 @@
 ﻿using Microsoft.Extensions.Hosting;
-using fs_2025_assignment_1_74780.Services;
 
 namespace fs_2025_assignment_1_74780.Services;
 
 public class DublinBikeBackgroundUpdater : BackgroundService
 {
-    private readonly IDublinBikeService _service;
+    private readonly IDublinBikeServiceV2 _service;
     private readonly ILogger<DublinBikeBackgroundUpdater> _logger;
 
-    public DublinBikeBackgroundUpdater(IDublinBikeService service, ILogger<DublinBikeBackgroundUpdater> logger)
+    public DublinBikeBackgroundUpdater(IDublinBikeServiceV2 service, ILogger<DublinBikeBackgroundUpdater> logger)
     {
         _service = service;
         _logger = logger;
@@ -19,8 +18,8 @@ public class DublinBikeBackgroundUpdater : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             await _service.UpdateRandomAvailabilityAsync(stoppingToken);
-            _logger.LogInformation("Stations updated at: {time}", DateTimeOffset.Now);
-            await Task.Delay(15000, stoppingToken); // 15 seconds
+            _logger.LogInformation("Stations updated (V2/Cosmos) at: {time}", DateTimeOffset.Now);
+            await Task.Delay(15000, stoppingToken);
         }
     }
 }

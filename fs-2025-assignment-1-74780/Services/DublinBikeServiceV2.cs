@@ -39,12 +39,14 @@ public class DublinBikeServiceV2 : IDublinBikeServiceV2
 
         if (!string.IsNullOrWhiteSpace(o.Search))
         {
-            var t = o.Search.ToLower();
-            query = query.Where(s => s.Name.ToLower().Contains(t) || s.Address.ToLower().Contains(t));
+            var t = o.Search.ToLowerInvariant();
+            query = query.Where(s =>
+                (s.Name ?? "").ToLowerInvariant().Contains(t) ||
+                (s.Address ?? "").ToLowerInvariant().Contains(t));
         }
 
-        string sort = o.Sort?.ToLower() ?? "name";
-        bool desc = (o.Dir?.ToLower() ?? "asc") == "desc";
+        string sort = o.Sort?.ToLowerInvariant() ?? "name";
+        bool desc = (o.Dir?.ToLowerInvariant() ?? "asc") == "desc";
 
         query = sort switch
         {
@@ -81,22 +83,21 @@ public class DublinBikeServiceV2 : IDublinBikeServiceV2
     {
         var stations = await LoadAllAsync(ct);
 
-        var summary = new DublinBikeSummary
+        return new DublinBikeSummary
         {
             TotalStations = stations.Count,
             TotalBikeStands = stations.Sum(s => s.BikeStands),
             TotalAvailableBikes = stations.Sum(s => s.AvailableBikes),
-            OpenStations = stations.Count(s => s.Status == "OPEN"),
-            ClosedStations = stations.Count(s => s.Status == "CLOSED")
+            OpenStations = stations.Count(s => string.Equals(s.Status, "OPEN", StringComparison.OrdinalIgnoreCase)),
+            ClosedStations = stations.Count(s => string.Equals(s.Status, "CLOSED", StringComparison.OrdinalIgnoreCase))
         };
-
-        return summary;
     }
 
     public async Task<DublinBikeStation> CreateAsync(DublinBikeStation station, CancellationToken ct = default)
     {
+        station.Id = station.Number.ToString();
         station.LastUpdateEpochMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        await _container.CreateItemAsync(station, cancellationToken: ct);
+        await _container.CreateItemAsync(station, new PartitionKey(station.Number), cancellationToken: ct);
         return station;
     }
 
@@ -107,10 +108,21 @@ public class DublinBikeServiceV2 : IDublinBikeServiceV2
             return null;
 
         station.Number = number;
+        station.Id = number.ToString();
         station.LastUpdateEpochMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        await _container.UpsertItemAsync(station, cancellationToken: ct);
+        await _container.UpsertItemAsync(station, new PartitionKey(station.Number), cancellationToken: ct);
         return station;
+    }
+
+    public async Task<bool> DeleteAsync(int number, CancellationToken ct = default)
+    {
+        var existing = await GetByNumberAsync(number, ct);
+        if (existing == null)
+            return false;
+
+        await _container.DeleteItemAsync<DublinBikeStation>(existing.Id, new PartitionKey(number), cancellationToken: ct);
+        return true;
     }
 
     public async Task UpdateRandomAvailabilityAsync(CancellationToken ct = default)
@@ -123,12 +135,13 @@ public class DublinBikeServiceV2 : IDublinBikeServiceV2
             int stands = rnd.Next(10, 50);
             int bikes = rnd.Next(0, stands);
 
+            s.Id = s.Number.ToString();
             s.BikeStands = stands;
             s.AvailableBikes = bikes;
             s.AvailableBikeStands = stands - bikes;
             s.LastUpdateEpochMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-            await _container.UpsertItemAsync(s, cancellationToken: ct);
+            await _container.UpsertItemAsync(s, new PartitionKey(s.Number), cancellationToken: ct);
         }
     }
 }

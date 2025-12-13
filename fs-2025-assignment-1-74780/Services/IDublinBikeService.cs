@@ -29,6 +29,7 @@ public interface IDublinBikeService
     Task<DublinBikeSummary> GetSummaryAsync(CancellationToken ct = default);
     Task<DublinBikeStation> CreateAsync(DublinBikeStation station, CancellationToken ct = default);
     Task<DublinBikeStation?> UpdateAsync(int number, DublinBikeStation station, CancellationToken ct = default);
+    Task<bool> DeleteAsync(int number, CancellationToken ct = default);
     Task UpdateRandomAvailabilityAsync(CancellationToken ct = default);
 }
 

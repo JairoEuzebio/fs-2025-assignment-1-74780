@@ -11,15 +11,15 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 
 builder.Services.AddSingleton<IDublinBikeService, DublinBikeServiceV1>();
-builder.Services.AddHostedService<DublinBikeBackgroundUpdater>();
 
 var cosmosConnection = builder.Configuration["Cosmos:ConnectionString"];
 
 if (!string.IsNullOrWhiteSpace(cosmosConnection))
 {
     builder.Services.Configure<CosmosOptions>(builder.Configuration.GetSection("Cosmos"));
-    builder.Services.AddSingleton(sp => new CosmosClient(cosmosConnection));
+    builder.Services.AddSingleton(_ => new CosmosClient(cosmosConnection));
     builder.Services.AddSingleton<IDublinBikeServiceV2, DublinBikeServiceV2>();
+    builder.Services.AddHostedService<DublinBikeBackgroundUpdater>();
 }
 
 builder.AddDependencies();
